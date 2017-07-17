@@ -1,11 +1,28 @@
 import newick
 from argparse import ArgumentParser
+from collections import deque 
 # ^ equivalent to "import argparse" and using "argparse.ArgumentParser"
 
 def parse_args():
 	parser = ArgumentParser(description=__doc__)
 	parser.add_argument('inputTree', help='newick format tree (in a file)')
 	return parser.parse_args()
+
+def post_order(tree):
+	"""Return a list of nodes in tree in post-order."""
+	ret = []
+	for child in tree.descendants:
+		ret.extend(post_order(child))
+	ret.append(tree)
+	return ret
+def pre_order(tree):
+	ret=[]
+	ret.append(tree)
+	for child in tree.descendants:
+		ret.extend(pre_order(child))	
+	return ret
+
+
 
 def main():
 	opts = parse_args()
@@ -14,6 +31,11 @@ def main():
 
 	for tree in trees:
 		print tree.ascii_art()
+		po = post_order(tree)
+		pro = pre_order(tree)
+		print pro 
+		print po
+
 	print 'trees is %s' % trees
 	print newick.dumps(trees)
 if __name__ == "__main__":
