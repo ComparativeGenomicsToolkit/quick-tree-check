@@ -22,6 +22,13 @@ def pre_order(tree):
 		ret.extend(pre_order(child))	
 	return ret
 
+def list_dict(list):
+	dict = {}
+	branch_val = 0
+	for i in list:
+		dict[i] = branch_val
+		branch_val += 1
+	return dict
 
 
 def main():
@@ -32,9 +39,9 @@ def main():
 	for tree in trees:
 		print tree.ascii_art()
 		po = post_order(tree)
-		pro = pre_order(tree)
-		print pro 
-		print po
+		pre = pre_order(tree)
+		pre_dict = list_dict(pre)
+		print pre_dict
 
 	print 'trees is %s' % trees
 	print newick.dumps(trees)
