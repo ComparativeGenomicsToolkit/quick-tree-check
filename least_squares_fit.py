@@ -30,6 +30,12 @@ def list_dict(list):
 		branch_val += 1
 	return dict
 
+def scan(list):
+	ret = []
+	for i in range(len(list)):
+		if list[i].is_leaf == True:
+			ret.append(list[i])
+	return ret
 
 def main():
 	opts = parse_args()
@@ -41,7 +47,12 @@ def main():
 		po = post_order(tree)
 		pre = pre_order(tree)
 		pre_dict = list_dict(pre)
-		print pre_dict
+		print po
+	for node in po:
+		print node.is_leaf
+	print scan(po)
+
+
 
 	print 'trees is %s' % trees
 	print newick.dumps(trees)
