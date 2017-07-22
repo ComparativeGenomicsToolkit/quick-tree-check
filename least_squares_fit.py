@@ -61,12 +61,38 @@ def all_ancestors(node):
 
 def ancestor_list(list):
 	ret = []
-	i=1
+	i=0
 	leaves = scan_leaves(list)
 	for i in range (i,len(leaves)):
 		ret.append(all_ancestors(leaves[i]))
 	return ret
 
+def naked_problem(list):
+	list_1 = []
+	ret = []
+	for i in range(len(list)-1):
+		for j in range(i+1,len(list)):
+			if len(list[i]) < len(list[j]):
+				for k in range(len(list[i])-1,-1,-1):
+					if list[i][k] != list[j][k]:
+						for l in range(len(list[i])-k,-1,-1):
+							ret.append(list[i][l])
+						for m in range(len(list[j])-k,-1,-1):
+							ret.append(list[j][k])
+				for n in range(len(list[j])-len(list[i])-1,-1,-1):
+					ret.append(list[j][n])
+			else:
+				for k in range(len(list[j])-1,-1,-1):
+					if list[i][k] != list[j][k]:
+						for l in range(len(list[i])-k-1,-1,-1):
+							ret.append(list[i][l])
+						for m in range(len(list[j])-k,-1,-1):
+							ret.append(list[j][k])
+				for n in range(len(list[i])-len(list[j])-1,-1,-1):
+					ret.append(list[j][n])
+			list_1.append(ret)
+	return list_1
+			
 
 
 
@@ -84,7 +110,9 @@ def main():
 		print node.ascii_art()
 		print po
 		ancA = ancestor_list(po)
+		win = naked_problem(ancA)
 		print "ancA is: %s" % ancA
+		print "win is: %s" % win
 	
 		
 
