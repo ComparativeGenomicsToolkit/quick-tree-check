@@ -1,7 +1,9 @@
 import newick
 from argparse import ArgumentParser
 from collections import deque 
+from copy import deepcopy
 # ^ equivalent to "import argparse" and using "argparse.ArgumentParser"
+
 
 def parse_args():
 	parser = ArgumentParser(description=__doc__)
@@ -44,54 +46,53 @@ def scroll(list):
 
 
 
-def scan_leaves(list):
+def scan_leaves(node):
 	ret = []
-	for i in range(len(list)):
-		if list[i].is_leaf == True:
-			ret.append(list[i])
+	for i in range(len(node)):
+		if node[i].is_leaf == True:
+			ret.append(node[i])
 	return ret
 
 def all_ancestors(node):
 	anc = []
 	current_node = node
-	while current_node.ancestor != None:
+	while current_node.ancestor.ancestor != None:
 		anc.append(current_node.ancestor)
 		current_node = current_node.ancestor
 	return anc
 
-def ancestor_list(list):
+def ancestor_list(node):
 	ret = []
 	i=0
-	leaves = scan_leaves(list)
+	leaves = scan_leaves(node)
 	for i in range (i,len(leaves)):
 		ret.append(all_ancestors(leaves[i]))
 	return ret
 
-def naked_problem(list):
+def naked_problem(anc):
 	list_1 = []
-	ret = []
-	for i in range(len(list)-1):
-		for j in range(i+1,len(list)):
-			if len(list[i]) < len(list[j]):
-				for k in range(len(list[i])-1,-1,-1):
-					if list[i][k] != list[j][k]:
-						for l in range(len(list[i])-k,-1,-1):
-							ret.append(list[i][l])
-						for m in range(len(list[j])-k,-1,-1):
-							ret.append(list[j][k])
-				for n in range(len(list[j])-len(list[i])-1,-1,-1):
-					ret.append(list[j][n])
+	new_list = deepcopy(anc)
+	for i in range(len(anc)-1):
+		for j in range(i+1,len(anc)):
+			ret = []
+			if len(anc[j]) < len(anc[i]):
+				for k in range(len(anc[j])-1,-1,-1):
+					if anc[i][k+len(anc[i])-len(anc[j])] == anc[j][k]:
+						anc[i].pop()
+						anc[j].pop()
+				ret.extend(anc[i])
+				ret.extend(anc[j])
 			else:
-				for k in range(len(list[j])-1,-1,-1):
-					if list[i][k] != list[j][k]:
-						for l in range(len(list[i])-k-1,-1,-1):
-							ret.append(list[i][l])
-						for m in range(len(list[j])-k,-1,-1):
-							ret.append(list[j][k])
-				for n in range(len(list[i])-len(list[j])-1,-1,-1):
-					ret.append(list[j][n])
+				for k in range(len(anc[i])-1,-1,-1):
+					if anc[j][k+len(anc[j])-len(anc[i])] == anc[i][k]:
+						anc[i].pop()
+						anc[j].pop()
+				ret.extend(anc[i])
+				ret.extend(anc[j])
 			list_1.append(ret)
+			anc = deepcopy(new_list)
 	return list_1
+			
 			
 
 
@@ -110,10 +111,12 @@ def main():
 		print node.ascii_art()
 		print po
 		ancA = ancestor_list(po)
-		win = naked_problem(ancA)
+		"""win = naked_problem(ancA)"""
 		print "ancA is: %s" % ancA
+		"""print "win is: %s" % win"""
+	for node in tree:
+		win = naked_problem(ancA)
 		print "win is: %s" % win
-	
 		
 
 	"""for node in po:
