@@ -45,7 +45,6 @@ def scroll(list):
 
 
 
-
 def scan_leaves(node):
 	ret = []
 	for i in range(len(node)):
@@ -69,12 +68,12 @@ def ancestor_list(node):
 		ret.append(all_ancestors(leaves[i]))
 	return ret
 
-def naked_problem(anc):
+def distance(anc,leaves):
 	list_1 = []
 	new_list = deepcopy(anc)
 	for i in range(len(anc)-1):
 		for j in range(i+1,len(anc)):
-			ret = []
+			ret = deque([])
 			if len(anc[j]) < len(anc[i]):
 				for k in range(len(anc[j])-1,-1,-1):
 					if anc[i][k+len(anc[i])-len(anc[j])] == anc[j][k]:
@@ -89,10 +88,14 @@ def naked_problem(anc):
 						anc[j].pop()
 				ret.extend(anc[i])
 				ret.extend(anc[j])
+			ret.appendleft(leaves[i])
+			ret.append(leaves[j])
 			list_1.append(ret)
 			anc = deepcopy(new_list)
 	return list_1
-			
+
+
+
 			
 
 
@@ -115,7 +118,8 @@ def main():
 		print "ancA is: %s" % ancA
 		"""print "win is: %s" % win"""
 	for node in tree:
-		win = naked_problem(ancA)
+		leafs = scan_leaves(po)
+		win = distance(ancA,leafs)
 		print "win is: %s" % win
 		
 
