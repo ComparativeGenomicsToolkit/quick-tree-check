@@ -142,23 +142,29 @@ def main():
 		tree = newick.load(f)
 
 	D_MATRIX = np.vstack(np.array([3,9,10,10,11,7]))
+	print "D Matrix is: " 
 	print D_MATRIX
 
 	for node in tree:
 		po = post_order(node)
-		pre = pre_order(node)
-		pre_dict = list_dict(pre)
-		print node.ascii_art()
 		ancA = ancestor_list(po)
-	for node in tree:
 		leafs = scan_leaves(po)
 		win = distance(ancA,leafs)
-		"""print "win is: %s" % win"""
 		x = X_matrix(win, po,node)
-		"""print x"""
 		V = v_matrix(x,D_MATRIX)
+		print node.ascii_art()
+		print "X Matrix is: "
 		print x
-		print assign_length(po, V)
+		assign_length(po, V)
+	"""for node in tree:
+		leafs = scan_leaves(po)
+		win = distance(ancA,leafs)
+		
+		x = X_matrix(win, po,node)
+		
+		V = v_matrix(x,D_MATRIX)
+		print "X Matrix is: %s" % x
+		print assign_length(po, V)"""
 
 	"""for node in po:
 		print node.is_leaf
@@ -169,8 +175,8 @@ def main():
 
 
 
-	print 'trees is %s' % tree
-	print newick.dumps(tree)
+	print 'Root is %s' % tree
+	print "Estimated Tree is %s" % newick.dumps(tree)
 if __name__ == "__main__":
 	main()
 
