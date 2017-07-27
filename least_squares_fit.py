@@ -1,7 +1,9 @@
 import newick
 from argparse import ArgumentParser
 from collections import deque 
-from copy import deepcopy
+from copy import copy
+import numpy as np
+from numpy.linalg import inv
 # ^ equivalent to "import argparse" and using "argparse.ArgumentParser"
 
 
@@ -38,10 +40,6 @@ def list_dict(list):
 		branch_val += 1
 	return dict
 
-def scroll(list):
-	for i in range(len(list)-1):
-		for j in range(i+1,len(list)):
-			print list[i],list[j]
 
 
 
@@ -70,7 +68,7 @@ def ancestor_list(node):
 
 def distance(anc,leaves):
 	list_1 = []
-	new_list = deepcopy(anc)
+	new_list = copy([copy(sublist) for sublist in anc])
 	for i in range(len(anc)-1):
 		for j in range(i+1,len(anc)):
 			ret = deque([])
@@ -87,17 +85,55 @@ def distance(anc,leaves):
 						anc[i].pop()
 						anc[j].pop()
 				ret.extend(anc[i])
-				ret.extend(anc[j])
+				ret.extend(anc[j]) 
 			ret.appendleft(leaves[i])
 			ret.append(leaves[j])
 			list_1.append(ret)
-			anc = deepcopy(new_list)
+			anc = copy([copy(sublist) for sublist in new_list])
 	return list_1
 
+def X_matrix(paths,post,root):
+	dict = {}
+	post = post[:-1]
+	if len(root.descendants) == 2:
+		arbitrary_node = root.descendants[0]
+		for path in paths:
+			if arbitrary_node in path:
+				path.remove(arbitrary_node)
+		post.remove(arbitrary_node)
+	X = np.zeros((len(paths),len(post)))
+	for i in range(len(paths)):
+		for j in range(len(paths[i])):
+			for k in range(len(post)):
+				if paths[i][j] == post[k]:
+					X[i,k] = 1
+					break
+	return X
 
+def v_matrix(x_matrix, d_matrix):
+	X_T = np.transpose(x_matrix)
+	X_T_X = X_T.dot(x_matrix)
+	XXX = inv(X_T_X).dot(X_T)
+	v = XXX.dot(d_matrix)
+	return v
 
-			
+def assign_length(postorder,v):
+	if len(postorder[len(postorder)-1].descendants) == 2:
+		j = 0
+		for i in range(len(postorder)-1):
+			if postorder[i] == postorder[len(postorder)-1].descendants[0]:
+				postorder[i].length = 0
+			else:
+				postorder[i].length = v[j]
+				j+=1
+	else:
+		for i in range(len(postorder)-1):
+			postorder[i].length = v[i]
+	return postorder
 
+		
+
+		
 
 
 def main():
@@ -105,23 +141,24 @@ def main():
 	with open(opts.inputTree) as f:
 		tree = newick.load(f)
 
-	
+	D_MATRIX = np.vstack(np.array([3,9,10,10,11,7]))
+	print D_MATRIX
 
 	for node in tree:
 		po = post_order(node)
 		pre = pre_order(node)
 		pre_dict = list_dict(pre)
 		print node.ascii_art()
-		print po
 		ancA = ancestor_list(po)
-		"""win = naked_problem(ancA)"""
-		print "ancA is: %s" % ancA
-		"""print "win is: %s" % win"""
 	for node in tree:
 		leafs = scan_leaves(po)
 		win = distance(ancA,leafs)
-		print "win is: %s" % win
-		
+		"""print "win is: %s" % win"""
+		x = X_matrix(win, po,node)
+		"""print x"""
+		V = v_matrix(x,D_MATRIX)
+		print x
+		print assign_length(po, V)
 
 	"""for node in po:
 		print node.is_leaf
