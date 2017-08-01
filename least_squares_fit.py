@@ -161,6 +161,16 @@ def X_matrix(paths,post,root):
 					break
 	return X
 
+def D_matrix(dist_matrix, post_order, paths):
+	D = np.zeros((len(paths),1))
+	k=0
+	for i in range(len(post_order)-2):
+		for j in range(1+i,len(post_order)-1):
+			if post_order[i].is_leaf == True and post_order[j].is_leaf == True:
+				D[k,0] = dist_matrix[i,j]
+				k += 1
+	return D
+
 def v_matrix(x_matrix, d_matrix):
 	X_T = np.transpose(x_matrix)
 	X_T_X = X_T.dot(x_matrix)
@@ -181,21 +191,6 @@ def assign_length(postorder,v):
 		for i in range(len(postorder)-1):
 			postorder[i].length = v[i]
 	return postorder
-
-def D_matrix(dist_matrix, post_order, paths):
-	D = np.zeros((len(paths),1))
-	k=0
-	for i in range(len(post_order)-2):
-		for j in range(1+i,len(post_order)-1):
-			if post_order[i].is_leaf == True and post_order[j].is_leaf == True:
-				D[k,0] = dist_matrix[i,j]
-				k += 1
-	return D
-
-
-
-		
-
 		
 
 def main():
