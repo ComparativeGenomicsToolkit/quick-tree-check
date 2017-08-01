@@ -32,17 +32,6 @@ def pre_order(tree):
 
 
 
-def list_dict(list):
-	dict = {}
-	branch_val = 0
-	for i in list:
-		dict[i] = branch_val
-		branch_val += 1
-	return dict
-
-
-
-
 def scan_leaves(node):
 	ret = []
 	for i in range(len(node)):
@@ -130,11 +119,9 @@ def assign_length(postorder,v):
 		for i in range(len(postorder)-1):
 			postorder[i].length = v[i]
 	return postorder
-
 		
 
 		
-
 
 def main():
 	opts = parse_args()
@@ -156,22 +143,7 @@ def main():
 		print "X Matrix is: "
 		print x
 		assign_length(po, V)
-	"""for node in tree:
-		leafs = scan_leaves(po)
-		win = distance(ancA,leafs)
-		
-		x = X_matrix(win, po,node)
-		
-		V = v_matrix(x,D_MATRIX)
-		print "X Matrix is: %s" % x
-		print assign_length(po, V)"""
-
-	"""for node in po:
-		print node.is_leaf
-	for node in po:
-		print node.ancestor
-	print scan(po)"""
-
+	
 
 
 
