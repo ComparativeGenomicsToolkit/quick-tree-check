@@ -8,7 +8,8 @@ from numpy.linalg import inv
 # ^ equivalent to "import argparse" and using "argparse.ArgumentParser"
 
 def read_distance_matrix(file, post_order):
-        """Read a distance matrix from a file.
+	"""
+        Read a distance matrix from a file.
 
         The distance matrix should be in the following format, tab-separated:
         A<TAB>B<TAB>d_ab
@@ -180,6 +181,19 @@ def assign_length(postorder,v):
 		for i in range(len(postorder)-1):
 			postorder[i].length = v[i]
 	return postorder
+
+def D_matrix(dist_matrix, post_order, paths):
+	D = np.zeros((len(paths),1))
+	k=0
+	for i in range(len(post_order)-2):
+		for j in range(1+i,len(post_order)-1):
+			if post_order[i].is_leaf == True and post_order[j].is_leaf == True:
+				D[k,0] = dist_matrix[i,j]
+				k += 1
+	return D
+
+
+
 		
 
 		
@@ -189,21 +203,32 @@ def main():
 	with open(opts.inputTree) as f:
 		tree = newick.load(f)
 
-	D_MATRIX = np.vstack(np.array([3,9,10,10,11,7]))
-	print "D Matrix is: " 
-	print D_MATRIX
+	test_D_MATRIX = np.vstack(np.array([3,9,10,10,11,7]))
+	
+	distance_mat = np.matrix([[0,3,9,10,6],
+		                      [3,0,10,11,7],
+		                      [9,10,0,7,3],
+		                      [10,11,7,0,4],
+		                      [6,7,3,4,0]])
 
+	
 	for node in tree:
 		po = post_order(node)
 		ancA = ancestor_list(po)
 		leafs = scan_leaves(po)
 		win = distance(ancA,leafs)
 		x = X_matrix(win, po,node)
+		D_MATRIX = D_matrix(distance_mat,po,win)
 		V = v_matrix(x,D_MATRIX)
+		assign_length(po, V)
 		print node.ascii_art()
 		print "X Matrix is: "
 		print x
-		assign_length(po, V)
+		print "Distance Matrix is: "
+		print distance_mat
+		print "D Matrix is: "
+		print D_MATRIX
+		dist_matrix = read_distance_matrix(file, po)
 	
 
 
