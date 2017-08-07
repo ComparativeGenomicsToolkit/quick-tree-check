@@ -5,69 +5,12 @@ from copy import copy
 from itertools import permutations
 import numpy as np
 from numpy.linalg import inv
+from StringIO import StringIO
+from subprocess import check_output
 # ^ equivalent to "import argparse" and using "argparse.ArgumentParser"
 
-def read_distance_matrix(file, post_order):
-	"""
-        Read a distance matrix from a file.
 
-        The distance matrix should be in the following format, tab-separated:
-        A<TAB>B<TAB>d_ab
-        A<TAB>C<TAB>d_ac
-        A<TAB>D<TAB>d_ad
-        B<TAB>C<TAB>d_bc
-        B<TAB>D<TAB>d_bd
-        C<TAB>D<TAB>d_cd
 
-        The order of the rows doesn't matter. Providing both d_ab and
-        d_ba is allowed, but if they aren't the same, an exception
-        will be raised.
-        """
-        # Get leaves
-        leaf_names = [n.name for n in post_order if len(n.descendants) == 0]
-
-        # Get leaf name -> index mapping
-        name_to_index = dict((leaf, i) for i, leaf in enumerate(leaf_names))
-
-        num_leaves = len(name_to_index)
-        matrix = np.zeros((num_leaves, num_leaves))
-
-        # Helper function to give a useful error on a missing key
-        def get_leaf_index(name):
-                try:
-                        return name_to_index[name]
-                except KeyError:
-                        raise RuntimeError("Didn't find a leaf with name '%s'"
-                                           "in tree" % name)
-
-        # Parse the file
-        visited_pairs = set()
-        for line in file:
-                if len(line.strip()) == 0:
-                        # Skip blank lines
-                        continue
-                fields = line.strip().split('\t')
-                if len(fields) != 3:
-                        raise RuntimeError("Expected 3 fields in distance "
-                                           "matrix")
-                i_name, j_name, dist = fields[0], fields[1], float(fields[2])
-                visited_pairs.add((i_name, j_name))
-                visited_pairs.add((j_name, i_name))
-                i = get_leaf_index(i_name)
-                j = get_leaf_index(j_name)
-                if matrix[i, j] != 0 and matrix[i, j] != dist:
-                        raise RuntimeError("Distance between %s and %s (%s) conflicts with "
-                                           "earlier entry, %s" % (i_name, j_name, dist,
-                                                                  matrix[i, j]))
-                matrix[i, j] = dist
-                matrix[j, i] = dist
-
-        # Verify we've got distances for all pairs
-        for leaf1, leaf2 in permutations(leaf_names, 2):
-                if (leaf1, leaf2) not in visited_pairs:
-                        raise RuntimeError("Distance matrix doesn't have entries for"
-                                           " pair (%s, %s)" % (leaf1, leaf2))
-        return matrix
 
 def parse_args():
 	parser = ArgumentParser(description=__doc__)
@@ -143,6 +86,9 @@ def distance(anc,leaves):
 			anc = copy([copy(sublist) for sublist in new_list])
 	return list_1
 
+
+
+
 def X_matrix(paths,post,root):
 	dict = {}
 	post = post[:-1]
@@ -193,37 +139,127 @@ def assign_length(postorder,v):
 	return postorder
 		
 
+
+
+def read_distance_matrix(file, post_order):
+	"""
+        Read a distance matrix from a file.
+
+        The distance matrix should be in the following format, tab-separated:
+        A<TAB>B<TAB>d_ab
+        A<TAB>C<TAB>d_ac
+        A<TAB>D<TAB>d_ad
+        B<TAB>C<TAB>d_bc
+        B<TAB>D<TAB>d_bd
+        C<TAB>D<TAB>d_cd
+
+        The order of the rows doesn't matter. Providing both d_ab and
+        d_ba is allowed, but if they aren't the same, an exception
+        will be raised.
+        """
+        # Get leaves
+        leaf_names = [n.name for n in post_order if len(n.descendants) == 0]
+
+        # Get leaf name -> index mapping
+        name_to_index = dict((leaf, i) for i, leaf in enumerate(leaf_names))
+
+        num_leaves = len(name_to_index)
+        matrix = np.zeros((num_leaves, num_leaves))
+
+        # Helper function to give a useful error on a missing key
+        def get_leaf_index(name):
+                try:
+                        return name_to_index[name]
+                except KeyError:
+                        raise RuntimeError("Didn't find a leaf with name '%s'"
+                                           "in tree" % name)
+
+        # Parse the file
+        visited_pairs = set()
+        for line in file:
+                if len(line.strip()) == 0:
+                        # Skip blank lines
+                        continue
+                fields = line.strip().split('\t')
+                if len(fields) != 3:
+                        raise RuntimeError("Expected 3 fields in distance "
+                                           "matrix")
+                i_name, j_name, dist = fields[0], fields[1], float(fields[2])
+                visited_pairs.add((i_name, j_name))
+                visited_pairs.add((j_name, i_name))
+                i = get_leaf_index(i_name)
+                j = get_leaf_index(j_name)
+                if matrix[i, j] != 0 and matrix[i, j] != dist:
+                        raise RuntimeError("Distance between %s and %s (%s) conflicts with "
+                                           "earlier entry, %s" % (i_name, j_name, dist,
+                                                                  matrix[i, j]))
+                matrix[i, j] = dist
+                matrix[j, i] = dist
+
+        # Verify we've got distances for all pairs
+        for leaf1, leaf2 in permutations(leaf_names, 2):
+                if (leaf1, leaf2) not in visited_pairs:
+                        raise RuntimeError("Distance matrix doesn't have entries for"
+                                           " pair (%s, %s)" % (leaf1, leaf2))
+        return matrix
+
+
+
+
+def run_mash_and_get_matrix(input_files, post_order):
+	ret = []
+	new_output = ''
+
+	check_output(['mash', 'sketch'] + input_files + ['-o', 'sketch'])
+	output = check_output(['mash', 'dist', 'sketch.msh', 'sketch.msh'])
+	for i in output.split('\n'):
+		fields = i.split('\t')
+		del fields[3:]
+		ret.append(fields)
+	for i in range(len(ret)-1):
+		str1 = '\t'.join(map(str,ret[i]))
+		new_output += str1
+		new_output += '\n'
+	print new_output
+	mash_matrix = read_distance_matrix(StringIO(new_output),post_order)
+	return mash_matrix
+
+
+
 def main():
 	opts = parse_args()
 	with open(opts.inputTree) as f:
 		tree = newick.load(f)
 
-	test_D_MATRIX = np.vstack(np.array([3,9,10,10,11,7]))
+	"""test_D_MATRIX = np.vstack(np.array([3,9,10,10,11,7]))
 	
 	distance_mat = np.matrix([[0,3,9,10,6],
 		                      [3,0,10,11,7],
 		                      [9,10,0,7,3],
 		                      [10,11,7,0,4],
-		                      [6,7,3,4,0]])
+		                      [6,7,3,4,0]])"""
 
-	
+
 	for node in tree:
 		po = post_order(node)
 		ancA = ancestor_list(po)
 		leafs = scan_leaves(po)
 		win = distance(ancA,leafs)
 		x = X_matrix(win, po,node)
-		D_MATRIX = D_matrix(distance_mat,po,win)
+		matrix = run_mash_and_get_matrix(['testdata/simCow.chr6', 'testdata/simRat.chr6', 'testdata/simMouse.chr6'], po)
+		#D_MATRIX = D_matrix(distance_mat,po,win)
+		D_MATRIX = D_matrix(matrix,po,win)
 		V = v_matrix(x,D_MATRIX)
 		assign_length(po, V)
+		
 		print node.ascii_art()
 		print "X Matrix is: "
 		print x
 		print "Distance Matrix is: "
-		print distance_mat
+		print matrix
+		#print distance_mat
 		print "D Matrix is: "
 		print D_MATRIX
-		dist_matrix = read_distance_matrix(file, po)
 	
 
 
