@@ -1,7 +1,7 @@
 import newick
 from argparse import ArgumentParser
 from collections import deque 
-from copy import copy
+from copy import copy, deepcopy
 from itertools import permutations
 import numpy as np
 from numpy.linalg import inv
@@ -15,6 +15,8 @@ from subprocess import check_output
 def parse_args():
 	parser = ArgumentParser(description=__doc__)
 	parser.add_argument('inputTree', help='newick format tree (in a file)')
+	parser.add_argument('--files', nargs='+')
+	parser.add_argument('--labels', nargs='+')   
 	return parser.parse_args()
 
 
@@ -109,12 +111,12 @@ def X_matrix(paths,post,root):
 
 def D_matrix(dist_matrix, post_order, paths):
 	D = np.zeros((len(paths),1))
+	leaf_order = [node for node in post_order if node.is_leaf]
 	k=0
-	for i in range(len(post_order)-2):
-		for j in range(1+i,len(post_order)-1):
-			if post_order[i].is_leaf == True and post_order[j].is_leaf == True:
-				D[k,0] = dist_matrix[i,j]
-				k += 1
+	for i in range(len(leaf_order)-1):
+		for j in range(1+i,len(leaf_order)):
+			D[k,0] = dist_matrix[i,j]
+			k += 1
 	return D
 
 def v_matrix(x_matrix, d_matrix):
@@ -131,13 +133,36 @@ def assign_length(postorder,v):
 			if postorder[i] == postorder[len(postorder)-1].descendants[0]:
 				postorder[i].length = 0
 			else:
-				postorder[i].length = v[j]
+				postorder[i].length = v[j][0]
 				j+=1
 	else:
 		for i in range(len(postorder)-1):
-			postorder[i].length = v[i]
+			postorder[i].length = v[i][0]
 	return postorder
+
+
+
 		
+def performance_metric(postorder, true_tree):
+	#postorder comes from assign_length so that if binary tree, the altered length is included
+	metric = 0
+	TruTre = post_order(true_tree)
+	if len(postorder[len(postorder)-1].descendants) == 2:
+		for i in range(len(postorder)-1):
+			if postorder[i] == postorder[len(postorder)-1].descendants[0]:
+				TruTre[len(TruTre)-1].descendants[1].length += TruTre[i].length
+				continue
+			else:
+				metric += (postorder[i].length - TruTre[i].length)**2
+	else:
+		for i in range(len(postorder)-1):
+			metric += (postorder[i].length - TruTre[i].length)**2
+	return metric
+
+
+
+
+
 
 
 
@@ -206,15 +231,20 @@ def read_distance_matrix(file, post_order):
 
 
 
-def run_mash_and_get_matrix(input_files, post_order):
+def run_mash_and_get_matrix(input_files, post_order, file_to_label):
 	ret = []
 	new_output = ''
 
 	check_output(['mash', 'sketch'] + input_files + ['-o', 'sketch'])
 	output = check_output(['mash', 'dist', 'sketch.msh', 'sketch.msh'])
 	for i in output.split('\n'):
+		if len(i) == 0:
+			# skip blank lines
+			continue
 		fields = i.split('\t')
 		del fields[3:]
+		fields[0] = file_to_label[fields[0]]
+		fields[1] = file_to_label[fields[1]]
 		ret.append(fields)
 	for i in range(len(ret)-1):
 		str1 = '\t'.join(map(str,ret[i]))
@@ -226,8 +256,13 @@ def run_mash_and_get_matrix(input_files, post_order):
 
 
 
+
+
 def main():
 	opts = parse_args()
+	file_to_label = {}
+	for file, label in zip(opts.files, opts.labels):
+		file_to_label[file] = label
 	with open(opts.inputTree) as f:
 		tree = newick.load(f)
 
@@ -241,17 +276,22 @@ def main():
 
 
 	for node in tree:
+		true_tree = deepcopy(node)
 		po = post_order(node)
 		ancA = ancestor_list(po)
 		leafs = scan_leaves(po)
 		win = distance(ancA,leafs)
 		x = X_matrix(win, po,node)
-		matrix = run_mash_and_get_matrix(['testdata/simCow.chr6', 'testdata/simRat.chr6', 'testdata/simMouse.chr6'], po)
+		matrix = run_mash_and_get_matrix(opts.files, po, file_to_label)
 		#D_MATRIX = D_matrix(distance_mat,po,win)
+		print matrix
 		D_MATRIX = D_matrix(matrix,po,win)
 		V = v_matrix(x,D_MATRIX)
-		assign_length(po, V)
-		
+		l = assign_length(po, V)
+		perf=performance_metric(l, true_tree)
+		print "The true tree is: "
+		print "the metric is "
+		print perf
 		print node.ascii_art()
 		print "X Matrix is: "
 		print x
@@ -260,6 +300,8 @@ def main():
 		#print distance_mat
 		print "D Matrix is: "
 		print D_MATRIX
+		print "v matrix is: "
+		print V
 	
 
 
