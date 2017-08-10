@@ -149,18 +149,14 @@ def performance_metric(postorder, true_tree):
 	TruTre = post_order(true_tree)
 	if len(postorder[len(postorder)-1].descendants) == 2:
 		for i in range(len(postorder)-1):
-			if postorder[i] == postorder[len(postorder)-1].descendants[0]:
+			if TruTre[i] == TruTre[len(postorder)-1].descendants[0]:
 				TruTre[len(TruTre)-1].descendants[1].length += TruTre[i].length
-				continue
 			else:
 				metric += (postorder[i].length - TruTre[i].length)**2
 	else:
 		for i in range(len(postorder)-1):
 			metric += (postorder[i].length - TruTre[i].length)**2
 	return metric
-
-
-
 
 
 
@@ -254,6 +250,8 @@ def run_mash_and_get_matrix(input_files, post_order, file_to_label):
 	mash_matrix = read_distance_matrix(StringIO(new_output),post_order)
 	return mash_matrix
 
+#def run_kmacs_and_get_matrix(input_files, post_order, file_to_label):
+
 
 
 
@@ -302,6 +300,7 @@ def main():
 		print D_MATRIX
 		print "v matrix is: "
 		print V
+	print tree.descendants
 	
 
 
