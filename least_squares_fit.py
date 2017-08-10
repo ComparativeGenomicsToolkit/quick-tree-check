@@ -1,8 +1,10 @@
+import os
 import newick
 from argparse import ArgumentParser
 from collections import deque 
 from copy import copy, deepcopy
 from itertools import permutations
+from tempfile import mkstemp
 import numpy as np
 from numpy.linalg import inv
 from StringIO import StringIO
@@ -16,7 +18,9 @@ def parse_args():
 	parser = ArgumentParser(description=__doc__)
 	parser.add_argument('inputTree', help='newick format tree (in a file)')
 	parser.add_argument('--files', nargs='+')
-	parser.add_argument('--labels', nargs='+')   
+	parser.add_argument('--labels', nargs='+')
+        parser.add_argument('--method', choices=['mash', 'kmacs'],
+                            default='mash')
 	return parser.parse_args()
 
 
@@ -192,7 +196,7 @@ def read_distance_matrix(file, post_order):
                 try:
                         return name_to_index[name]
                 except KeyError:
-                        raise RuntimeError("Didn't find a leaf with name '%s'"
+                        raise RuntimeError("Didn't find a leaf with name '%s' "
                                            "in tree" % name)
 
         # Parse the file
@@ -224,8 +228,37 @@ def read_distance_matrix(file, post_order):
                                            " pair (%s, %s)" % (leaf1, leaf2))
         return matrix
 
+def run_kmacs_and_get_matrix(input_files, post_order, file_to_label, k=0):
+        fasta_path = produce_concatenated_fasta(input_files, [file_to_label[f] for f in input_files])
+        check_output(['kmacs', fasta_path, str(k)])
+        matrix = ''
+        with open('DMat') as f:
+                # We make two passes. First, we just get the ordering
+                # of taxa names in the distance matrix. Next, we'll go
+                # through the file again, constructing the distance
+                # matrix in a format we can parse.
 
+                # 1st pass
+                names = []
+                # Skip first line
+                f.readline()
+                for line in f:
+                        fields = line.split()
+                        names.append(fields[0])
 
+                # 2nd pass
+                f.seek(0)
+                f.readline()
+                for line in f:
+                        fields = line.strip().split()
+                        name1 = fields[0]
+                        distances = fields[1:]
+                        assert len(distances) == len(names), "Incorrect number of entries in distance matrix"
+                        for i, distance in enumerate(distances):
+                                name2 = names[i]
+                                matrix += '%s\t%s\t%s\n' % (name1, name2, distance)
+        matrix_file = StringIO(matrix)
+        return read_distance_matrix(matrix_file, post_order)
 
 def run_mash_and_get_matrix(input_files, post_order, file_to_label):
 	ret = []
@@ -253,7 +286,33 @@ def run_mash_and_get_matrix(input_files, post_order, file_to_label):
 #def run_kmacs_and_get_matrix(input_files, post_order, file_to_label):
 
 
+def produce_concatenated_fasta(input_paths, names):
+        """Given a list of fasta files (representing one genome each), get a
+        fasta file containing a "sequence" for each genome, which has all
+        sequences in the genome concatenated together, separated by Ns."""
+        # Get temporary file
+        fd, path = mkstemp()
+        fh = os.fdopen(fd, 'w')
+        for input_path, name in zip(input_paths, names):
+                seq = []
+                with open(input_path) as f:
+                        for line in f:
+                                if line == '':
+                                        # Ignore blank lines
+                                        continue
+                                if line[0] == '>':
+                                        # fasta header. Append some Ns
+                                        # to try to break up any
+                                        # k-mers that may otherwise
+                                        # span sequences
+                                        seq.append('N' * 100)
+                                else:
+                                        seq.append(line.strip())
+                fh.write('>' + name + '\n')
+                for line in seq:
+                        fh.write(line + '\n')
 
+        return path
 
 
 def main():
@@ -280,7 +339,10 @@ def main():
 		leafs = scan_leaves(po)
 		win = distance(ancA,leafs)
 		x = X_matrix(win, po,node)
-		matrix = run_mash_and_get_matrix(opts.files, po, file_to_label)
+                if opts.method == 'mash':
+		        matrix = run_mash_and_get_matrix(opts.files, po, file_to_label)
+                elif opts.method == 'kmacs':
+                        matrix = run_kmacs_and_get_matrix(opts.files, po, file_to_label)
 		#D_MATRIX = D_matrix(distance_mat,po,win)
 		print matrix
 		D_MATRIX = D_matrix(matrix,po,win)
