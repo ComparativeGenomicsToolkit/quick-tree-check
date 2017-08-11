@@ -19,7 +19,7 @@ def parse_args():
 	parser.add_argument('inputTree', help='newick format tree (in a file)')
 	parser.add_argument('--files', nargs='+')
 	parser.add_argument('--labels', nargs='+')
-        parser.add_argument('--method', choices=['mash', 'kmacs'],
+        parser.add_argument('--method', choices=['mash', 'kmacs', 'spaced'],
                             default='mash')
 	return parser.parse_args()
 
@@ -283,7 +283,43 @@ def run_mash_and_get_matrix(input_files, post_order, file_to_label):
 	mash_matrix = read_distance_matrix(StringIO(new_output),post_order)
 	return mash_matrix
 
-#def run_kmacs_and_get_matrix(input_files, post_order, file_to_label):
+
+
+
+
+def run_spaced_and_get_matrix(input_files, post_order, file_to_label):
+	fasta_path = produce_concatenated_fasta(input_files, [file_to_label[f] for f in input_files])
+        check_output(['spaced', fasta_path])
+        matrix = ''
+        with open('DMat') as f:
+                # We make two passes. First, we just get the ordering
+                # of taxa names in the distance matrix. Next, we'll go
+                # through the file again, constructing the distance
+                # matrix in a format we can parse.
+
+                # 1st pass
+                names = []
+                # Skip first line
+                f.readline()
+                for line in f:
+                        fields = line.split()
+                        names.append(fields[0])
+
+                # 2nd pass
+                f.seek(0)
+                f.readline()
+                for line in f:
+                        fields = line.strip().split()
+                        name1 = fields[0]
+                        distances = fields[1:]
+                        assert len(distances) == len(names), "Incorrect number of entries in distance matrix"
+                        for i, distance in enumerate(distances):
+                                name2 = names[i]
+                                matrix += '%s\t%s\t%s\n' % (name1, name2, distance)
+        matrix_file = StringIO(matrix)
+        return read_distance_matrix(matrix_file, post_order)
+
+
 
 
 def produce_concatenated_fasta(input_paths, names):
@@ -340,9 +376,11 @@ def main():
 		win = distance(ancA,leafs)
 		x = X_matrix(win, po,node)
                 if opts.method == 'mash':
-		        matrix = run_mash_and_get_matrix(opts.files, po, file_to_label)
+		        	matrix = run_mash_and_get_matrix(opts.files, po, file_to_label)
                 elif opts.method == 'kmacs':
-                        matrix = run_kmacs_and_get_matrix(opts.files, po, file_to_label)
+                    matrix = run_kmacs_and_get_matrix(opts.files, po, file_to_label)
+                elif opts.method == 'spaced':
+                	matrix = run_spaced_and_get_matrix(opts.files, po, file_to_label)
 		#D_MATRIX = D_matrix(distance_mat,po,win)
 		print matrix
 		D_MATRIX = D_matrix(matrix,po,win)
@@ -362,7 +400,7 @@ def main():
 		print D_MATRIX
 		print "v matrix is: "
 		print V
-	print tree.descendants
+
 	
 
 
