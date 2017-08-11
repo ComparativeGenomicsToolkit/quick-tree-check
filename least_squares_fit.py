@@ -271,8 +271,8 @@ def run_mash_and_get_matrix(input_files, post_order, file_to_label):
 
 	start_time = time.time()
 	check_output(['mash', 'sketch'] + input_files + ['-o', 'sketch'])
-	runtime = time.time() - start_time
 	output = check_output(['mash', 'dist', 'sketch.msh', 'sketch.msh'])
+	runtime = time.time() - start_time
 	for i in output.split('\n'):
 		if len(i) == 0:
 			# skip blank lines
