@@ -1,4 +1,5 @@
 import os
+import time
 import newick
 from argparse import ArgumentParser
 from collections import deque 
@@ -232,7 +233,9 @@ def read_distance_matrix(file, post_order):
 
 def run_kmacs_and_get_matrix(input_files, post_order, file_to_label, k=0):
         fasta_path = produce_concatenated_fasta(input_files, [file_to_label[f] for f in input_files])
+        start_time = time.time()
         check_output(['kmacs', fasta_path, str(k)])
+        runtime = time.time() - start_time
         matrix = ''
         with open('DMat') as f:
                 # We make two passes. First, we just get the ordering
@@ -260,13 +263,15 @@ def run_kmacs_and_get_matrix(input_files, post_order, file_to_label, k=0):
                                 name2 = names[i]
                                 matrix += '%s\t%s\t%s\n' % (name1, name2, distance)
         matrix_file = StringIO(matrix)
-        return read_distance_matrix(matrix_file, post_order)
+        return read_distance_matrix(matrix_file, post_order), runtime
 
 def run_mash_and_get_matrix(input_files, post_order, file_to_label):
 	ret = []
 	new_output = ''
 
+	start_time = time.time()
 	check_output(['mash', 'sketch'] + input_files + ['-o', 'sketch'])
+	runtime = time.time() - start_time
 	output = check_output(['mash', 'dist', 'sketch.msh', 'sketch.msh'])
 	for i in output.split('\n'):
 		if len(i) == 0:
@@ -282,7 +287,7 @@ def run_mash_and_get_matrix(input_files, post_order, file_to_label):
 		new_output += str1
 		new_output += '\n'
 	mash_matrix = read_distance_matrix(StringIO(new_output),post_order)
-	return mash_matrix
+	return mash_matrix, runtime
 
 
 
@@ -290,7 +295,9 @@ def run_mash_and_get_matrix(input_files, post_order, file_to_label):
 
 def run_spaced_and_get_matrix(input_files, post_order, file_to_label):
 	fasta_path = produce_concatenated_fasta(input_files, [file_to_label[f] for f in input_files])
+        start_time = time.time()
         check_output(['spaced', fasta_path])
+        runtime = time.time() - start_time
         matrix = ''
         with open('DMat') as f:
                 # We make two passes. First, we just get the ordering
@@ -318,7 +325,7 @@ def run_spaced_and_get_matrix(input_files, post_order, file_to_label):
                                 name2 = names[i]
                                 matrix += '%s\t%s\t%s\n' % (name1, name2, distance)
         matrix_file = StringIO(matrix)
-        return read_distance_matrix(matrix_file, post_order)
+        return read_distance_matrix(matrix_file, post_order), runtime
 
 
 
@@ -377,11 +384,11 @@ def main():
         win = distance(ancA,leafs)
         x = X_matrix(win, po,node)
         if opts.method == 'mash':
-            matrix = run_mash_and_get_matrix(opts.files, po, file_to_label)
+            matrix, runtime = run_mash_and_get_matrix(opts.files, po, file_to_label)
         elif opts.method == 'kmacs':
-            matrix = run_kmacs_and_get_matrix(opts.files, po, file_to_label)
+            matrix, runtime = run_kmacs_and_get_matrix(opts.files, po, file_to_label)
         elif opts.method == 'spaced':
-            matrix = run_spaced_and_get_matrix(opts.files, po, file_to_label)
+            matrix, runtime = run_spaced_and_get_matrix(opts.files, po, file_to_label)
         #D_MATRIX = D_matrix(distance_mat,po,win)
         D_MATRIX = D_matrix(matrix,po,win)
         V = v_matrix(x,D_MATRIX)
@@ -391,7 +398,7 @@ def main():
             # Print TSV-style information
             if not opts.noHeader:
                 print 'TestSet\tMethod\tRuntime\tSumOfSquaredDifferences'
-            print '%s\t%s\t%s\t%s' % (opts.inputTree, opts.method, 0.6, perf)
+            print '%s\t%s\t%s\t%s' % (opts.inputTree, opts.method, runtime, perf)
         else:
             # Print other (debugging) information
             print matrix
