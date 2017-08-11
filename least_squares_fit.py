@@ -21,6 +21,8 @@ def parse_args():
 	parser.add_argument('--labels', nargs='+')
         parser.add_argument('--method', choices=['mash', 'kmacs', 'spaced'],
                             default='mash')
+        parser.add_argument('--tsv', action='store_true', help='Output metrics as TSV')
+        parser.add_argument('--noHeader', action='store_true', help='Suppress TSV header')
 	return parser.parse_args()
 
 
@@ -279,7 +281,6 @@ def run_mash_and_get_matrix(input_files, post_order, file_to_label):
 		str1 = '\t'.join(map(str,ret[i]))
 		new_output += str1
 		new_output += '\n'
-	print new_output
 	mash_matrix = read_distance_matrix(StringIO(new_output),post_order)
 	return mash_matrix
 
@@ -352,61 +353,62 @@ def produce_concatenated_fasta(input_paths, names):
 
 
 def main():
-	opts = parse_args()
-	file_to_label = {}
-	for file, label in zip(opts.files, opts.labels):
-		file_to_label[file] = label
-	with open(opts.inputTree) as f:
-		tree = newick.load(f)
+    opts = parse_args()
+    file_to_label = {}
+    for file, label in zip(opts.files, opts.labels):
+        file_to_label[file] = label
+    with open(opts.inputTree) as f:
+        tree = newick.load(f)
 
-	"""test_D_MATRIX = np.vstack(np.array([3,9,10,10,11,7]))
-	
-	distance_mat = np.matrix([[0,3,9,10,6],
-		                      [3,0,10,11,7],
-		                      [9,10,0,7,3],
-		                      [10,11,7,0,4],
-		                      [6,7,3,4,0]])"""
+    """test_D_MATRIX = np.vstack(np.array([3,9,10,10,11,7]))
 
-
-	for node in tree:
-		true_tree = deepcopy(node)
-		po = post_order(node)
-		ancA = ancestor_list(po)
-		leafs = scan_leaves(po)
-		win = distance(ancA,leafs)
-		x = X_matrix(win, po,node)
-                if opts.method == 'mash':
-		        	matrix = run_mash_and_get_matrix(opts.files, po, file_to_label)
-                elif opts.method == 'kmacs':
-                    matrix = run_kmacs_and_get_matrix(opts.files, po, file_to_label)
-                elif opts.method == 'spaced':
-                	matrix = run_spaced_and_get_matrix(opts.files, po, file_to_label)
-		#D_MATRIX = D_matrix(distance_mat,po,win)
-		print matrix
-		D_MATRIX = D_matrix(matrix,po,win)
-		V = v_matrix(x,D_MATRIX)
-		l = assign_length(po, V)
-		perf=performance_metric(l, true_tree)
-		print "The true tree is: "
-		print "the metric is "
-		print perf
-		print node.ascii_art()
-		print "X Matrix is: "
-		print x
-		print "Distance Matrix is: "
-		print matrix
-		#print distance_mat
-		print "D Matrix is: "
-		print D_MATRIX
-		print "v matrix is: "
-		print V
-
-	
+    distance_mat = np.matrix([[0,3,9,10,6],
+                              [3,0,10,11,7],
+                              [9,10,0,7,3],
+                              [10,11,7,0,4],
+                              [6,7,3,4,0]])"""
 
 
-
-	print 'Root is %s' % tree
-	print "Estimated Tree is %s" % newick.dumps(tree)
+    for node in tree:
+        true_tree = deepcopy(node)
+        po = post_order(node)
+        ancA = ancestor_list(po)
+        leafs = scan_leaves(po)
+        win = distance(ancA,leafs)
+        x = X_matrix(win, po,node)
+        if opts.method == 'mash':
+            matrix = run_mash_and_get_matrix(opts.files, po, file_to_label)
+        elif opts.method == 'kmacs':
+            matrix = run_kmacs_and_get_matrix(opts.files, po, file_to_label)
+        elif opts.method == 'spaced':
+            matrix = run_spaced_and_get_matrix(opts.files, po, file_to_label)
+        #D_MATRIX = D_matrix(distance_mat,po,win)
+        D_MATRIX = D_matrix(matrix,po,win)
+        V = v_matrix(x,D_MATRIX)
+        l = assign_length(po, V)
+        perf=performance_metric(l, true_tree)
+        if opts.tsv:
+            # Print TSV-style information
+            if not opts.noHeader:
+                print 'TestSet\tMethod\tRuntime\tSumOfSquaredDifferences'
+            print '%s\t%s\t%s\t%s' % (opts.inputTree, opts.method, 0.6, perf)
+        else:
+            # Print other (debugging) information
+            print matrix
+            print "The true tree is: "
+            print "the metric is "
+            print perf
+            print node.ascii_art()
+            print "X Matrix is: "
+            print x
+            print "Distance Matrix is: "
+            print matrix
+            print "D Matrix is: "
+            print D_MATRIX
+            print "v matrix is: "
+            print V
+            print 'Root is %s' % tree
+            print "Estimated Tree is %s" % newick.dumps(tree)
 if __name__ == "__main__":
-	main()
+    main()
 
