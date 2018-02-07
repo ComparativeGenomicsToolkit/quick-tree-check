@@ -266,6 +266,13 @@ def run_kmacs_and_get_matrix(input_files, post_order, file_to_label, k=0):
         return read_distance_matrix(matrix_file, post_order), runtime
 
 def run_mash_and_get_matrix(input_files, post_order, file_to_label):
+	"""
+	Run Mash and get out a numpy matrix.
+	
+	input_files: array of filenames
+	post_order: ordering of leaves within the matrix
+	file_to_label: correspondence between filename and leaf name
+	"""
 	ret = []
 	new_output = ''
 
