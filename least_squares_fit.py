@@ -10,21 +10,23 @@ from numpy.linalg import inv
 from StringIO import StringIO
 from subprocess import check_output
 from cogent import LoadTree
-from cogent import core
+from cogent.maths.stats.test import correlation
 # ^ equivalent to "import argparse" and using "argparse.ArgumentParser"
+'''
+Do alignment with apes/nematodes and do the sum of squares of the pairwise distances.
 
-
-
+python2 least_squares_fit.py testdata/tree.nh --files ${DATA_DIR}/apes/hg38.fa ${DATA_DIR}/apes/panTro5.fa ${DATA_DIR}/apes/susie.fa ${DATA_DIR}/apes/ponAbe2.fa ${DATA_DIR}/apes/nomLeu3.fa --labels hg38 panTro5 susie ponAbe2 nomLeu3 
+'''
 
 def parse_args():
         parser = ArgumentParser(description=__doc__)
         parser.add_argument('inputTree', help='newick format tree (in a file)')
         parser.add_argument('--files', nargs='+')
         parser.add_argument('--labels', nargs='+')
-        parser.add_argument('--method', choices=['mash', 'kmacs', 'spaced'],
-                            default='mash')
-        parser.add_argument('--tsv', action='store_true', help='Output metrics as TSV')
-        parser.add_argument('--noHeader', action='store_true', help='Suppress TSV header')
+#        parser.add_argument('--method', choices=['mash', 'kmacs', 'spaced'],
+#                            default='mash')
+#        parser.add_argument('--tsv', action='store_true', help='Output metrics as TSV')
+#        parser.add_argument('--noHeader', action='store_true', help='Suppress TSV header')
         return parser.parse_args()
 
 
@@ -368,21 +370,27 @@ def produce_concatenated_fasta(input_paths, names):
 
         return path
 
+def distance_from_r_squared(m1, m2):
+    """Estimates distance as 1-r^2: no correl = max distance"""
+    return 1 - (correlation(m1.flat, m2.flat)[0])**2
 
 def main():
     opts = parse_args()
     file_to_label = {}
     for file, label in zip(opts.files, opts.labels):
         file_to_label[file] = label
-
     tr = LoadTree(opts.inputTree)
+
     disMatrix, tip_order = tr.tipToTipDistances()
     mashMatrix, _ = run_mash_and_get_matrix(opts.files,tip_order,file_to_label)
-#    kmacsMatrix, _ = run_kmacs_and_get_matrix(opts.files,tip_order,file_to_label)
-#    spacedMatrix, _ = run_spaced_and_get_matrix(opts.files,tip_order,file_to_label)
     print distance_from_r_squared(disMatrix,mashMatrix)
-#    print distance_from_r_sqaured(disMatrix,kmacsMatrix)
-#    print distance_from_r_sqaured(disMatrix,spacedMatrix)
+  
+    sqaured_difference = (disMatrix - mashMatrix) ** 2
+    sum_of_squares = np.tril(sqaured_difference).sum()
+    print sum_of_squares
+
+    print disMatrix
+    print mashMatrix
 
 if __name__ == "__main__":
     main()
