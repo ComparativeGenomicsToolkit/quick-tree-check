@@ -13,9 +13,46 @@ from cogent import LoadTree
 from cogent.maths.stats.test import correlation
 # ^ equivalent to "import argparse" and using "argparse.ArgumentParser"
 '''
-Do alignment with apes/nematodes and do the sum of squares of the pairwise distances.
+testdata
+0.146424835371
+1.1893932483
+[[0.       0.500501 0.507581 0.386589 0.360539]
+ [0.500501 0.       0.176098 0.599054 0.573004]
+ [0.507581 0.176098 0.       0.606134 0.580084]
+ [0.386589 0.599054 0.606134 0.       0.35211 ]
+ [0.360539 0.573004 0.580084 0.35211  0.      ]]
+   
+[[0.       1.       1.       0.263022 0.295981]
+ [1.       0.       0.159146 1.       1.      ]
+ [1.       0.159146 0.       1.       1.      ]
+ [0.263022 1.       1.       0.       0.295981]
+ [0.295981 1.       1.       0.295981 0.      ]]
 
-python2 least_squares_fit.py testdata/tree.nh --files ${DATA_DIR}/apes/hg38.fa ${DATA_DIR}/apes/panTro5.fa ${DATA_DIR}/apes/susie.fa ${DATA_DIR}/apes/ponAbe2.fa ${DATA_DIR}/apes/nomLeu3.fa --labels hg38 panTro5 susie ponAbe2 nomLeu3 
+python least_squares_fit.py /mnt/fasta/apes/tree.nh --files /mnt/fasta/apes/hg38.fa /mnt/fasta/apes/panTro5.fa /mnt/fasta/apes/susie.fa /mnt/fasta/apes/ponAbe2.fa /mnt/fasta/apes/nomLeu3
+.fa --labels hg38 panTro5 susie ponAbe2 nomLeu3
+0.00678913242032
+0.00031755682992
+[[0.       0.01339  0.019734 0.039403 0.046204]
+ [0.01339  0.       0.020024 0.039693 0.046494]
+ [0.019734 0.020024 0.       0.037597 0.044398]
+ [0.039403 0.039693 0.037597 0.       0.044681]
+ [0.046204 0.046494 0.044398 0.044681 0.      ]]
+
+[[0.        0.0135016 0.0168391 0.032829  0.037311 ]
+ [0.0135016 0.        0.017653  0.0326168 0.0385787]
+ [0.0168391 0.017653  0.        0.032829  0.0392331]
+ [0.032829  0.0326168 0.032829  0.        0.0403101]
+ [0.037311  0.0385787 0.0392331 0.0403101 0.       ]]
+
+python2 least_squares_fit.py /mnt/fasta/nematodes/tree.nh --files /mnt/fasta/nematodes/C_elegans.fa /mnt/fasta/nematodes/C_japonica.fa /mnt/fasta/nematodes/P_pacificus.fa --labels C_elegans C_japonica P_pacificus
+0.424419128204
+0.364650584073
+[[0.       0.262598 0.399917]
+ [0.262598 0.       0.405149]
+ [0.399917 0.405149 0.      ]]
+[[0.       0.263022 0.295981]
+ [0.263022 0.       1.      ]
+ [0.295981 1.       0.      ]]
 '''
 
 def parse_args():
@@ -23,10 +60,10 @@ def parse_args():
         parser.add_argument('inputTree', help='newick format tree (in a file)')
         parser.add_argument('--files', nargs='+')
         parser.add_argument('--labels', nargs='+')
-#        parser.add_argument('--method', choices=['mash', 'kmacs', 'spaced'],
-#                            default='mash')
-#        parser.add_argument('--tsv', action='store_true', help='Output metrics as TSV')
-#        parser.add_argument('--noHeader', action='store_true', help='Suppress TSV header')
+        parser.add_argument('--method', choices=['mash', 'kmacs', 'spaced'],
+                            default='mash')
+        parser.add_argument('--tsv', action='store_true', help='Output metrics as TSV')
+        parser.add_argument('--noHeader', action='store_true', help='Suppress TSV header')
         return parser.parse_args()
 
 
