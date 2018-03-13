@@ -28,7 +28,7 @@ testdata
  [0.263022 1.       1.       0.       0.295981]
  [0.295981 1.       1.       0.295981 0.      ]]
 
-python least_squares_fit.py /mnt/fasta/apes/tree.nh --files /mnt/fasta/apes/hg38.fa /mnt/fasta/apes/panTro5.fa /mnt/fasta/apes/susie.fa /mnt/fasta/apes/ponAbe2.fa /mnt/fasta/apes/nomLeu3
+python2 least_squares_fit.py /mnt/fasta/apes/tree.nh --files /mnt/fasta/apes/hg38.fa /mnt/fasta/apes/panTro5.fa /mnt/fasta/apes/susie.fa /mnt/fasta/apes/ponAbe2.fa /mnt/fasta/apes/nomLeu3
 .fa --labels hg38 panTro5 susie ponAbe2 nomLeu3
 0.00678913242032
 0.00031755682992
@@ -44,6 +44,34 @@ python least_squares_fit.py /mnt/fasta/apes/tree.nh --files /mnt/fasta/apes/hg38
  [0.032829  0.0326168 0.032829  0.        0.0403101]
  [0.037311  0.0385787 0.0392331 0.0403101 0.       ]]
 
+Species swap
+0.418525842762
+0.00185018178192
+[[0.       0.01339  0.019734 0.039403 0.046204]
+ [0.01339  0.       0.020024 0.039693 0.046494]
+ [0.019734 0.020024 0.       0.037597 0.044398]
+ [0.039403 0.039693 0.037597 0.       0.044681]
+ [0.046204 0.046494 0.044398 0.044681 0.      ]]
+[[0.        0.032829  0.0168391 0.0135016 0.037311 ]
+ [0.032829  0.        0.032829  0.0326168 0.0403101]
+ [0.0168391 0.032829  0.        0.017653  0.0392331]
+ [0.0135016 0.0326168 0.017653  0.        0.0385787]
+ [0.037311  0.0403101 0.0392331 0.0385787 0.       ]]
+
+Branch length factor * 10
+0.00553857372597
+1.0139071292
+[[0.      0.1339  0.15936 0.35605 0.42406]
+ [0.1339  0.      0.16226 0.35895 0.42696]
+ [0.15936 0.16226 0.      0.37597 0.44398]
+ [0.35605 0.35895 0.37597 0.      0.44681]
+ [0.42406 0.42696 0.44398 0.44681 0.     ]]
+[[0.        0.0135016 0.0168391 0.032829  0.037311 ]
+ [0.0135016 0.        0.017653  0.0326168 0.0385787]
+ [0.0168391 0.017653  0.        0.032829  0.0392331]
+ [0.032829  0.0326168 0.032829  0.        0.0403101]
+ [0.037311  0.0385787 0.0392331 0.0403101 0.       ]]
+        
 python2 least_squares_fit.py /mnt/fasta/nematodes/tree.nh --files /mnt/fasta/nematodes/C_elegans.fa /mnt/fasta/nematodes/C_japonica.fa /mnt/fasta/nematodes/P_pacificus.fa --labels C_elegans C_japonica P_pacificus
 0.424419128204
 0.364650584073
